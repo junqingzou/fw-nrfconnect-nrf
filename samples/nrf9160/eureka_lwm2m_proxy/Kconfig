@@ -1,0 +1,82 @@
+#
+# Copyright (c) 2019 Nordic Semiconductor
+#
+# SPDX-License-Identifier: LicenseRef-BSD-5-Clause-Nordic
+#
+
+source "$ZEPHYR_BASE/Kconfig.zephyr"
+
+menu "Eureka LwM2M Proxy"
+
+config EUREKA_LWM2M_PROXY
+	bool "Eureka LwM2M Proxy"
+	default y
+	select LTE_LINK_CONTROL
+	select MODEM_INFO
+
+#
+# Inter-Connect
+#
+choice
+	prompt "UART for Interconnect"
+	default INTER_CONNECT_UART_2
+	help
+		Sets the UART to use for interconnect
+		-  UART 0
+		-  UART 1
+		-  UART 2
+	config INTER_CONNECT_UART_0
+		bool "UART 0"
+	config INTER_CONNECT_UART_1
+		bool "UART 1"
+	config INTER_CONNECT_UART_2
+		bool "UART 2"
+endchoice
+
+config INTER_CONNECT_UART
+	int
+	default 0 if INTER_CONNECT_UART_0
+	default 1 if INTER_CONNECT_UART_1
+	default 2 if INTER_CONNECT_UART_2
+
+config INTER_CONNECT_UART_BUF_SIZE
+	int "UART buffer size"
+	default 256
+	help
+	  "Protocol packet size, max 256"
+
+config INTER_CONNECT_BCC
+	bool "Inter_Connect BCC"
+	default n
+	help
+	  "Enable/Disable Block Check Code (BCC)"
+
+#
+# GPIO wakeup
+#
+config ELP_GPIO_WAKEUP
+	bool "Support of GPIO wakeup"
+	help
+	  Enable GPIO wakeup on nRF9160 side
+
+if ELP_GPIO_WAKEUP
+config ELP_MODEM_WAKEUP_PIN
+	int "GPIO for wakeup"
+	default 31
+endif # ELP_GPIO_WAKEUP
+
+# LwM2M service
+rsource "src/lwm2m/Kconfig"
+
+# nRF91 local test harness
+config ELP_TEST
+	bool "nRF91 local test harness"
+	help
+	  Enable local test harness
+
+module = ELP
+module-str = ELP
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+
+endmenu
+

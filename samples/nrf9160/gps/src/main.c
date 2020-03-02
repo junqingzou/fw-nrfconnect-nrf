@@ -18,6 +18,8 @@
 #endif
 
 #define AT_XSYSTEMMODE    "AT\%XSYSTEMMODE=1,0,1,0"
+#define AT_CGDCONT        "AT+CGDCONT=0,\"IPV4V6\",\"tiot05\""
+#define AT_CGAUTH         "AT+CGAUTH=0,1,\"plusw6q9tattkmpk\",\"msfbbam83bsdetxb\""
 #define AT_ACTIVATE_GPS   "AT+CFUN=31"
 #define AT_ACTIVATE_LTE   "AT+CFUN=21"
 #define AT_DEACTIVATE_LTE "AT+CFUN=20"
@@ -31,8 +33,10 @@
 #endif
 
 static const char     update_indicator[] = {'\\', '|', '/', '-'};
-static const char     at_commands[][31]  = {
+static const char     at_commands[][64]  = {
 				AT_XSYSTEMMODE,
+				AT_CGDCONT,
+				AT_CGAUTH,
 #ifdef CONFIG_BOARD_NRF9160_PCA10090NS
 				AT_MAGPIO,
 				AT_COEX0,
@@ -75,7 +79,7 @@ static const char status2[] = "+CEREG:1";
 static const char status3[] = "+CEREG: 5";
 static const char status4[] = "+CEREG:5";
 
-static void wait_for_lte(void *context, char *response)
+static void wait_for_lte(void *context, const char *response)
 {
 	if (!memcmp(status1, response, AT_CMD_SIZE(status1)) ||
 		!memcmp(status2, response, AT_CMD_SIZE(status2)) ||
@@ -286,8 +290,8 @@ int process_gps_data(nrf_gnss_data_frame_t *gps_data)
 
 		case NRF_GNSS_AGPS_DATA_ID:
 #ifdef CONFIG_SUPL_CLIENT_LIB
-			printk("\033[1;1H");
-			printk("\033[2J");
+			//printk("\033[1;1H");
+			//printk("\033[2J");
 			printk("New AGPS data requested, contacting SUPL server, flags %d\n",
 			       gps_data->agps.data_flags);
 			activate_lte(true);
@@ -379,17 +383,17 @@ int main(void)
 
 		if (!got_first_fix) {
 			cnt++;
-			printk("\033[1;1H");
-			printk("\033[2J");
+			//printk("\033[1;1H");
+			//printk("\033[2J");
 			print_satellite_stats(&gps_data);
-			printk("\nScanning [%c] ",
-					update_indicator[cnt%4]);
+			//printk("\nScanning [%c] ",
+			//		update_indicator[cnt%4]);
 		}
 
 		if (((k_uptime_get() - fix_timestamp) >= 1) &&
 		     (got_first_fix)) {
-			printk("\033[1;1H");
-			printk("\033[2J");
+			//printk("\033[1;1H");
+			//printk("\033[2J");
 
 			print_satellite_stats(&gps_data);
 

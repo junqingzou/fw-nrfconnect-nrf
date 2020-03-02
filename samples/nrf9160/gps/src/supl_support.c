@@ -10,7 +10,8 @@
 #include <logging/log.h>
 #include <net/socket.h>
 
-#define SUPL_SERVER      "supl.google.com"
+//#define SUPL_SERVER      "supl.google.com"
+#define SUPL_SERVER      "173.194.73.192"
 #define SUPL_SERVER_PORT 7276
 
 static int supl_fd;

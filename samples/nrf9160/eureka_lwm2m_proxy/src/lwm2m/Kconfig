@@ -1,0 +1,14 @@
+#
+# Copyright (c) 2019 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: LicenseRef-BSD-5-Clause-Nordic
+#
+config ELP_LWM2M_SERVICE
+	bool "Support of LwM2M service"
+	help
+	  Enable LwM2M support for serial-lte-modem
+
+config ELP_LWM2M_SERVER
+	string "LwM2M server"
+	help
+	  "hostname or IP address of LwM2M remote server"
