@@ -82,8 +82,6 @@ static char path[MAX_URI_LENGTH];
 /* global variable defined in different files */
 extern struct modem_param_info modem_param;
 
-static bool adc_client_set;
-
 static int adc_create_cb(u16_t obj_inst_id)
 {
 	LOG_INF("ADC instance %d created", obj_inst_id);
@@ -95,19 +93,18 @@ static int adc_data_post_write_cb(u16_t obj_inst_id,
 				 u8_t *data, u16_t data_len,
 				 bool last_block, size_t total_size)
 {
+	char buf[CONFIG_LWM2M_ADC_DATA_SIZE+1];
+
 	if (data_len > CONFIG_LWM2M_ADC_DATA_SIZE) {
 		LOG_ERR("WRITE sizeover (%d)", data_len);
 		return -EINVAL;
 	}
 
 	LOG_HEXDUMP_INF(data, data_len, "ADC-WR");
-	if (!adc_client_set) {
-		char buf[CONFIG_LWM2M_ADC_DATA_SIZE+1];
-		buf[0] = NOT_TYPE_LWM2M_OBJECT;
-		memcpy(&buf[1], data, data_len);
-		(void)inter_connect_notify(NOT_TYPE_LWM2M_OBJECT, buf, data_len+1);
-	}
-	adc_client_set = false;
+
+	buf[0] = NOT_TYPE_LWM2M_OBJECT;
+	memcpy(&buf[1], data, data_len);
+	(void)inter_connect_notify(NOT_TYPE_LWM2M_OBJECT, buf, data_len+1);
 	return 0;
 }
 
@@ -270,13 +267,15 @@ static int lwm2m_setup(void)
 	lwm2m_firmware_set_update_cb(firmware_update_cb);
 #endif
 
-        /* setup BinaryAppDataContainer Object */
-	lwm2m_engine_register_create_callback(19, adc_create_cb);
-	lwm2m_engine_create_obj_inst("19/0");
-	lwm2m_engine_register_post_write_callback("19/0/0", adc_data_post_write_cb);
-	//adc_client_set = true;
-	lwm2m_engine_set_opaque("19/0/0",
-		(void *)CLIENT_MANUFACTURER, sizeof(CLIENT_MANUFACTURER)-1);
+	if (!object_instances_created) {
+	        /* setup BinaryAppDataContainer Object */
+		lwm2m_engine_register_create_callback(19, adc_create_cb);
+		lwm2m_engine_create_obj_inst("19/0"); /* uplink */
+		lwm2m_engine_set_opaque("19/0/0",
+			(void *)CLIENT_MANUFACTURER, sizeof(CLIENT_MANUFACTURER)-1);
+		lwm2m_engine_create_obj_inst("19/1"); /* downlink */
+		lwm2m_engine_register_post_write_callback("19/1/0", adc_data_post_write_cb);
+	}
 
 	/* All instances only need to create once */
 	object_instances_created = true;
