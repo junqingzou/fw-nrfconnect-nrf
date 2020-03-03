@@ -1421,6 +1421,12 @@ static int lwm2m_engine_set(char *pathstr, void *value, u16_t len)
 
 	/* setup initial data elements */
 	data_ptr = res_inst->data_ptr;
+#if defined(CONFIG_EUREKA_LWM2M_PROXY)
+/* Adjust to actual buffer length */
+	if (obj_field->data_type == LWM2M_RES_TYPE_OPAQUE) {
+		res_inst->data_len = len;
+	}
+#endif
 	data_len = res_inst->data_len;
 
 	/* allow user to override data elements via callback */
@@ -1523,7 +1529,12 @@ static int lwm2m_engine_set(char *pathstr, void *value, u16_t len)
 					 data_ptr, len, false, 0);
 	}
 
+#if !defined(CONFIG_EUREKA_LWM2M_PROXY)
+/* Notify whenever Set happens */
 	if (changed) {
+#else
+	{
+#endif
 		NOTIFY_OBSERVER_PATH(&path);
 	}
 
@@ -2096,7 +2107,7 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			engine_put_opaque(&msg->out, &msg->path,
 					(u8_t *)data_ptr,
 					data_len);
-		break;
+			break;
 
 		case LWM2M_RES_TYPE_STRING:
 			engine_put_string(&msg->out, &msg->path,
