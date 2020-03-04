@@ -3434,7 +3434,8 @@ static int handle_request(struct coap_packet *request,
 	msg->in.offset = msg->in.in_cpkt->hdr_len + msg->in.in_cpkt->opt_len;
 	coap_packet_get_payload(msg->in.in_cpkt, &payload_len);
 #if defined(CONFIG_EUREKA_LWM2M_PROXY)
-/* there is no COAP_OPTION_BLOCK1 in Eureka downlink Write*/
+/* there is no COAP_OPTION_BLOCK1 in Eureka downlink Write
+ * which is mandatory in LwM2M v1.0.2 on Server side (chapter 8)*/
 	LOG_DBG("[eureka] offset: %d, len: %d", msg->in.offset, payload_len);
 	msg->in.in_cpkt->offset = msg->in.offset + payload_len;
 #endif

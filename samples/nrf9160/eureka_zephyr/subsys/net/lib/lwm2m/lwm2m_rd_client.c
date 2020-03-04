@@ -751,14 +751,9 @@ static int sm_registration_done(void)
 	 * so that we can update early and avoid lifetime timeout
 	 */
 	if (sm_is_registered() &&
-#if defined(CONFIG_EUREKA_LWM2M_PROXY)
-/* only allow engine triggered Update */
-	    client.trigger_update) {
-#else
 	    (client.trigger_update ||
 	     ((client.lifetime - SECONDS_TO_UPDATE_EARLY) <=
 	      (k_uptime_get() - client.last_update) / 1000))) {
-#endif
 		forced_update = client.trigger_update;
 		client.trigger_update = 0U;
 		ret = sm_send_registration(forced_update,
@@ -773,6 +768,7 @@ static int sm_registration_done(void)
 			set_sm_state(ENGINE_DO_REGISTRATION);
 		}
 	}
+
 	return ret;
 }
 
