@@ -352,9 +352,11 @@ static void rd_client_event(struct lwm2m_ctx *client,
 int do_lwm2m_connect(const u8_t *param, u8_t length)
 {
 	int ret;
-	u16_t lifetime;
+	u16_t lifetime = 0;
 
-	memcpy(&lifetime, param, 2);
+	if (param != NULL && length > 1) {
+		memcpy(&lifetime, param, 2);
+	}
 	if (lifetime < 15 || lifetime > 65535){
 		LOG_WRN("Invalid lifetime (%d)", lifetime);
 		lifetime = CONFIG_LWM2M_ENGINE_DEFAULT_LIFETIME;
