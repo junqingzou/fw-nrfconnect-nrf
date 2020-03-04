@@ -95,12 +95,18 @@ static int adc_data_post_write_cb(u16_t obj_inst_id,
 {
 	char buf[CONFIG_LWM2M_ADC_DATA_SIZE+1];
 
+	ARG_UNUSED(obj_inst_id);
+	ARG_UNUSED(res_id);
+	ARG_UNUSED(res_inst_id);
+	ARG_UNUSED(last_block);
+	ARG_UNUSED(total_size);
+
 	if (data_len > CONFIG_LWM2M_ADC_DATA_SIZE) {
 		LOG_ERR("WRITE sizeover (%d)", data_len);
 		return -EINVAL;
 	}
 
-	LOG_HEXDUMP_INF(data, data_len, "ADC-WR");
+	LOG_HEXDUMP_DBG(data, data_len, "ADC-WR");
 
 	buf[0] = NOT_TYPE_LWM2M_OBJECT;
 	memcpy(&buf[1], data, data_len);
@@ -358,8 +364,10 @@ int do_lwm2m_connect(void)
 	}
 
 	/* use IMEI as unique endpoint name */
-	snprintf(endpoint_name, sizeof(endpoint_name), "i:%s",
-		modem_param.device.imei.value_string);
+	memcpy(endpoint_name, modem_param.device.imei.value_string,
+		strlen(modem_param.device.imei.value_string));
+	//snprintf(endpoint_name, sizeof(endpoint_name), "i: %s",
+	//	modem_param.device.imei.value_string);
 
 	/* client.sec_obj_inst is 0 as a starting point */
 	lwm2m_rd_client_start(&client, endpoint_name, rd_client_event);

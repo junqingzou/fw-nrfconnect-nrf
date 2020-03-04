@@ -2300,7 +2300,6 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 		ret = get_option_int(msg->in.in_cpkt, COAP_OPTION_BLOCK1);
 		if (ret >= 0) {
 			last_block = !GET_MORE(ret);
-
 			/* Get block_ctx for total_size (might be zero) */
 			tkl = coap_header_get_token(msg->in.in_cpkt, token);
 			if (tkl && !get_block_ctx(token, tkl, &block_ctx)) {
@@ -2326,7 +2325,6 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			if (ret < 0) {
 				return ret;
 			}
-
 			break;
 
 		case LWM2M_RES_TYPE_STRING:
@@ -3435,7 +3433,11 @@ static int handle_request(struct coap_packet *request,
 	/* setup incoming data */
 	msg->in.offset = msg->in.in_cpkt->hdr_len + msg->in.in_cpkt->opt_len;
 	coap_packet_get_payload(msg->in.in_cpkt, &payload_len);
-
+#if defined(CONFIG_EUREKA_LWM2M_PROXY)
+/* there is no COAP_OPTION_BLOCK1 in Eureka downlink Write*/
+	LOG_DBG("[eureka] offset: %d, len: %d", msg->in.offset, payload_len);
+	msg->in.in_cpkt->offset = msg->in.offset + payload_len;
+#endif
 	/* Check for block transfer */
 	r = get_option_int(msg->in.in_cpkt, COAP_OPTION_BLOCK1);
 	if (r > 0) {
