@@ -3708,7 +3708,11 @@ static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
 			lwm2m_reset_message(msg, true);
 		}
 	} else {
+#if defined(CONFIG_EUREKA_LWM2M_PROXY)
+		LOG_WRN("No handler for response");
+#else
 		LOG_ERR("No handler for response");
+#endif
 	}
 }
 

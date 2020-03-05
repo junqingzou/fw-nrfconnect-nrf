@@ -383,12 +383,14 @@ int do_lwm2m_connect(const u8_t *param, u8_t length)
 	//	modem_param.device.imei.value_string);
 
 	/* client.sec_obj_inst is 0 as a starting point */
+	LOG_INF("Start client");
 	lwm2m_rd_client_start(&client, endpoint_name, rd_client_event);
 	return 0;
 }
 
 int do_lwm2m_disconnect(void)
 {
+	LOG_INF("Stop client");
 	lwm2m_rd_client_stop(&client, rd_client_event);
 	return 0;
 }
@@ -651,10 +653,11 @@ int do_lwm2m_read_opaque(char *output)
 
 	memset(output, 0x00, MAX_READ_LENGTH);
 	ret = lwm2m_engine_get_opaque(path, (void *)output, MAX_READ_LENGTH);
+	LOG_INF("Get (%s)", log_strdup(output));
 	if (ret < 0) {
 		return ret;
 	} else {
-		return MAX_READ_LENGTH;  /* we don't know the actual size */
+		return strlen(output);
 	}
 }
 
@@ -664,6 +667,7 @@ int do_lwm2m_write_opaque(const u8_t *param, u8_t length)
 
 	memcpy(data_buf, param, length);
 	data_buf[length] = '\0';
+	LOG_INF("Set (%s)", log_strdup(data_buf));
 	return lwm2m_engine_set_opaque(path, (void *)data_buf, length);
 }
 
