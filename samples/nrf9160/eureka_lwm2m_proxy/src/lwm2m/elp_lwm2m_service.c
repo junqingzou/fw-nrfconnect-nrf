@@ -85,6 +85,21 @@ extern struct modem_param_info modem_param;
 static int adc_create_cb(u16_t obj_inst_id)
 {
 	LOG_INF("ADC instance %d created", obj_inst_id);
+
+	return 0;
+}
+
+static int adc_data_post_notify_cb(u16_t obj_inst_id,
+				 u16_t res_id, int result)
+{
+	char buf[sizeof(int)];
+
+	LOG_INF("ADC NOTIFY ins: %d, res: %d, result: %d",
+		obj_inst_id, res_id, result);
+
+	memcpy(buf, &result, sizeof(result));
+	(void)inter_connect_notify(NOT_TYPE_LWM2M_NOTIFY_RESULT, buf, sizeof(result));
+
 	return 0;
 }
 
@@ -93,7 +108,7 @@ static int adc_data_post_write_cb(u16_t obj_inst_id,
 				 u8_t *data, u16_t data_len,
 				 bool last_block, size_t total_size)
 {
-	char buf[CONFIG_LWM2M_ADC_DATA_SIZE+1];
+	char buf[CONFIG_LWM2M_ADC_DATA_SIZE];
 
 	ARG_UNUSED(obj_inst_id);
 	ARG_UNUSED(res_id);
@@ -108,9 +123,8 @@ static int adc_data_post_write_cb(u16_t obj_inst_id,
 
 	LOG_HEXDUMP_DBG(data, data_len, "ADC-WR");
 
-	buf[0] = NOT_TYPE_LWM2M_OBJECT;
-	memcpy(&buf[1], data, data_len);
-	(void)inter_connect_notify(NOT_TYPE_LWM2M_OBJECT, buf, data_len+1);
+	memcpy(buf, data, data_len);
+	(void)inter_connect_notify(NOT_TYPE_LWM2M_OBJECT, buf, data_len);
 	return 0;
 }
 
@@ -281,8 +295,9 @@ static int lwm2m_setup(u16_t lifetime)
 	        /* setup BinaryAppDataContainer Object */
 		lwm2m_engine_register_create_callback(19, adc_create_cb);
 		lwm2m_engine_create_obj_inst("19/0"); /* uplink */
-		lwm2m_engine_set_opaque("19/0/0",
-			(void *)CLIENT_MANUFACTURER, sizeof(CLIENT_MANUFACTURER)-1);
+		lwm2m_engine_register_post_notify_callback("19/0/0", adc_data_post_notify_cb);
+		//lwm2m_engine_set_opaque("19/0/0",
+		//	(void *)CLIENT_MANUFACTURER, sizeof(CLIENT_MANUFACTURER)-1);
 		lwm2m_engine_create_obj_inst("19/1"); /* downlink */
 		lwm2m_engine_register_post_write_callback("19/1/0", adc_data_post_write_cb);
 	}

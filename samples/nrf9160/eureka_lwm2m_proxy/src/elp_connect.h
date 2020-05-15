@@ -59,6 +59,7 @@ enum ic_notify_type {
 	/** Notification type LwM2M */
 	NOT_TYPE_LWM2M_RD,	/* Registration and discovery events */
 	NOT_TYPE_LWM2M_OBJECT,	/* LwM2M Object events */
+	NOT_TYPE_LWM2M_NOTIFY_RESULT,	/* LwM2M Notify result events */
 	NOT_TYPE_INVALID
 };
 

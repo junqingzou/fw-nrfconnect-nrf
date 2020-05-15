@@ -1993,6 +1993,23 @@ int lwm2m_engine_register_post_write_callback(char *pathstr,
 	return 0;
 }
 
+#if defined(CONFIG_EUREKA_LWM2M_PROXY)
+int lwm2m_engine_register_post_notify_callback(char *pathstr,
+					 lwm2m_engine_notify_data_cb_t cb)
+{
+	int ret;
+	struct lwm2m_engine_res *res = NULL;
+
+	ret = lwm2m_engine_get_resource(pathstr, &res);
+	if (ret < 0) {
+		return ret;
+	}
+
+	res->post_notify_cb = cb;
+	return 0;
+}
+#endif
+
 int lwm2m_engine_register_exec_callback(char *pathstr,
 					lwm2m_engine_user_cb_t cb)
 {
@@ -3868,6 +3885,34 @@ static int generate_notify_message(struct observe_node *obs,
 		goto cleanup;
 	}
 
+
+#if defined(CONFIG_EUREKA_LWM2M_PROXY)
+/* send post Notify message since COAP_TYPE_NON_CON above */
+{
+	struct lwm2m_engine_res *res = NULL;
+
+	for (int index = 0; index < obj_inst->resource_count; index++) {
+		if ( obs->path.res_id == obj_inst->resources[index].res_id) {
+			res = &obj_inst->resources[index];
+			break;
+		}
+	}
+
+	ret = lwm2m_send_message(msg);
+
+	if (res && res->post_notify_cb) {
+		return res->post_notify_cb(obj_inst->obj_inst_id,
+			res->res_id, ret);
+	}
+
+	if (ret < 0) {
+		LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
+		goto cleanup;
+	}
+
+	LOG_DBG("NOTIFY MSG: SENT");
+}
+#else
 	ret = lwm2m_send_message(msg);
 	if (ret < 0) {
 		LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
@@ -3875,6 +3920,7 @@ static int generate_notify_message(struct observe_node *obs,
 	}
 
 	LOG_DBG("NOTIFY MSG: SENT");
+#endif
 	return 0;
 
 cleanup:

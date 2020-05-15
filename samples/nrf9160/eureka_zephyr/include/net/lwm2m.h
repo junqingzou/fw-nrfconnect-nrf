@@ -163,6 +163,25 @@ typedef int (*lwm2m_engine_set_data_cb_t)(u16_t obj_inst_id,
 					  u8_t *data, u16_t data_len,
 					  bool last_block, size_t total_size);
 
+#if defined(CONFIG_EUREKA_LWM2M_PROXY)
+/**
+ * @brief Asynchronous callback when data has been sent out as Notify message.
+ *
+ * A function of this type can be registered via:
+ * lwm2m_engine_register_post_notify_callback()
+ *
+ * @param[out] obj_inst_id Object instance ID generating the callback.
+ * @param[out] res_id Resource ID generating the callback.
+ * @param[out] result result of Notify handling in the stack, 0 for success
+ *
+ * @return Callback returns a negative error code (errno.h) indicating
+ *         reason of failure or 0 for success.
+ */
+typedef int (*lwm2m_engine_notify_data_cb_t)(u16_t obj_inst_id,
+					  u16_t res_id,
+					  int result);
+#endif
+
 /**
  * @brief Asynchronous event notification callback.
  *
@@ -698,6 +717,25 @@ int lwm2m_engine_register_pre_write_callback(char *pathstr,
  */
 int lwm2m_engine_register_post_write_callback(char *pathstr,
 					      lwm2m_engine_set_data_cb_t cb);
+
+#if defined(CONFIG_EUREKA_LWM2M_PROXY)
+/**
+ * @brief Set resource (instance) post-notify callback
+ *
+ * This callback is triggered after Notify mesage is sent with data in the
+ * resource data buffer.
+ *
+ * It allows an LwM2M client or object to post-process the value of a resource
+ * or trigger other related resource calculations.
+ *
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
+ * @param[in] cb Post-notify resource callback
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_register_post_notify_callback(char *pathstr,
+					      lwm2m_engine_notify_data_cb_t cb);
+#endif
 
 /**
  * @brief Set resource execute event callback
