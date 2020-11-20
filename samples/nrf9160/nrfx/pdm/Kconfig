@@ -1,0 +1,15 @@
+mainmenu "NRFX PDM Sample"
+
+config PDM_IO_CLK
+	int "IO pin for PDM CLK signal"
+
+config PDM_IO_DATA
+	int "IO pin for PDM DATA signal"
+
+config PDM_IO_MIC
+	int "IO pin for PDM MIC Control"
+
+config PDM_IO_MIC_ACTIVE_LOW
+	bool "IO pin for PDM MIC Control Polarity"
+
+source "$ZEPHYR_BASE/Kconfig.zephyr"
