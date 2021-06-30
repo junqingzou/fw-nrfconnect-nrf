@@ -125,8 +125,8 @@ int util_string_get(const struct at_param_list *list, size_t index,
 /**
  * @brief use AT command to get IPv4 and IPv6 addresses
  *
- * @param[in] addr4 buffer to hold the IPv4 address, size NET_IPV4_ADDR_LEN
- * @param[in] addr6 buffer to hold the IPv6 address, size NET_IPV6_ADDR_LEN
+ * @param[in] addr4 buffer to hold the IPv4 address, size INET_ADDRSTRLEN
+ * @param[in] addr6 buffer to hold the IPv6 address, size INET6_ADDRSTRLEN
  */
 void util_get_ip_addr(char *addr4, char *addr6);
 /** @} */

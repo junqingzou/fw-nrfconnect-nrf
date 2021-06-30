@@ -198,7 +198,7 @@ void util_get_ip_addr(char *addr4, char *addr6)
 	int err;
 	char rsp[128];
 	char tmp[sizeof(struct in6_addr)];
-	char addr[NET_IPV6_ADDR_LEN];
+	char addr[INET6_ADDRSTRLEN];
 	size_t addr_len;
 
 	err = at_cmd_write("AT+CGPADDR", rsp, sizeof(rsp), NULL);
@@ -216,7 +216,7 @@ void util_get_ip_addr(char *addr4, char *addr6)
 	}
 
 	/* parse first IP string, could be IPv4 or IPv6 */
-	addr_len = NET_IPV6_ADDR_LEN;
+	addr_len = INET6_ADDRSTRLEN;
 	err = util_string_get(&at_param_list, 2, addr, &addr_len);
 	if (err) {
 		return;
@@ -231,7 +231,7 @@ void util_get_ip_addr(char *addr4, char *addr6)
 	if (addr6 == NULL) {
 		return;
 	}
-	addr_len = NET_IPV6_ADDR_LEN;
+	addr_len = INET6_ADDRSTRLEN;
 	err = util_string_get(&at_param_list, 3, addr, &addr_len);
 	if (err) {
 		return;
