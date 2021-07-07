@@ -61,6 +61,13 @@ void rsp_send(const uint8_t *str, size_t len);
 int enter_datamode(slm_datamode_handler_t handler);
 
 /**
+ * @brief Check whether SLM AT host is in data mode
+ *
+ * @retval true if yes, false if no.
+ */
+bool in_datamode(void);
+
+/**
  * @brief Request SLM AT host to exit data mode
  *
  * @retval true If normal exit from data mode.

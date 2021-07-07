@@ -151,6 +151,11 @@ int enter_datamode(slm_datamode_handler_t handler)
 	return 0;
 }
 
+bool in_datamode(void)
+{
+	return (slm_operation_mode == SLM_DATA_MODE);
+}
+
 bool exit_datamode(void)
 {
 	if (slm_operation_mode == SLM_DATA_MODE) {

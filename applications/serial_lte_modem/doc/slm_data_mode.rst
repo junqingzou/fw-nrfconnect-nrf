@@ -20,9 +20,9 @@ Overview
 You can manually switch between AT-command mode and data mode.
 However, the SLM data mode is applied automatically while using the following modules:
 
-* TCP/TLS server and client
-* UDP server and client, DTLS client
 * Socket ``send()`` and ``sendto()``
+* TCP/TLS proxy send
+* UDP/DTLS proxy send
 * FTP put, uput and mput
 * MQTT publish
 * HTTP request
@@ -31,18 +31,19 @@ Entering data mode
 ==================
 
 SLM enters data mode when an AT command to send data out does not carry the payload.
-See the following examples:
+See the following example:
 
 * ``AT#XSEND`` makes SLM enter data mode to receive arbitrary data to transmit.
 * ``AT#XSEND="data"`` makes SLM transmit data in normal AT Command mode.
 
-TCP and UDP proxies must explicitly specify data mode support using their respective AT commands.
-Also, the following conditions apply:
+Other examples:
 
-* A TCP Server enters data mode after accepting an incoming connection.
-* A TCP Client enters data mode after connecting to a remote server.
-* An UDP Server enters data mode after starting.
-* An UDP Client enters data mode after connecting to a remote server.
+* ``AT#XTCPSEND``
+* ``AT#XUDPSEND``
+* ``AT#XFTP="put",<file>``
+* ``AT#XFTP="uput"``
+* ``AT#XFTP="mput",<file>``
+* ``AT#XMQTTPUB=<topic>,"",<qos>,<retain>``
 
 Exiting data mode
 =================
