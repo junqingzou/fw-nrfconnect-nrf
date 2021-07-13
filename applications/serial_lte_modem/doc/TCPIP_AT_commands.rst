@@ -9,18 +9,16 @@ TCP and UDP AT commands
 
 The following commands list contains TCP and UDP related AT commands.
 
-For more information on the networking services, visit the `BSD Networking Services Spec Reference`_.
-
 TCP filtering #XTCPFILTER
 =========================
 
-The ``#XTCPFILTER`` command allows you to set or clear an allowlist for the TCP server.
-If the allowlist is set, only IPv4 addresses in the list are allowed for connection.
+The ``#XTCPFILTER`` command allows you to set or clear an allow-list for the TCP server.
+If the allow-list is set, only IPv4 addresses in the list are allowed for connection.
 
 Set command
 -----------
 
-The set command allows you to set or clear an allowlist for the TCP server.
+The set command allows you to set or clear an allow-list for the TCP server.
 
 Syntax
 ~~~~~~
