@@ -1,0 +1,29 @@
+#
+# Copyright (c) 2022 Nordic Semiconductor
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+source "Kconfig.zephyr"
+
+menu "NaaS on Nordic nRF9160"
+
+config NAAS_NORDIC
+	bool "Flag for NaaS Nordic adaption"
+	default y
+	help
+	  Enable this flag to include NaaS adaption to Nordic nRF9160.
+
+config NAAS_NORDIC_CONNECT_TIMEOUT
+	int "NIDD network registration timeout in seconds"
+	default 60
+
+config NAAS_NORDIC_NIDD_POLL_TIME
+	int "Poll time-out in seconds for NIDD connection"
+	default 10
+
+module = NAAS
+module-str = naas
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+
+endmenu
