@@ -84,7 +84,7 @@
 
 static char g_conf_make[6] = DFLT_MAKE;
 static char g_conf_manufacturer[20] = DFLT_MANUFACTURER;
-static char g_conf_vendor[20] = DFLT_VENDOR;
+//static char g_conf_vendor[20] = DFLT_VENDOR;
 static char g_conf_dmtype[20] = DFLT_DEVTYPE;
 static char g_conf_rb_dmtype[20] = JTOS_TELEMETRY_CONFIG_DMTYPE_RBOMA;
 static char g_device_model[JIOT_NIDD_DEVICE_MODEL] = DFLT_MODEL;
@@ -165,6 +165,11 @@ typedef struct jiot_nidd_sendPayload {
   static bool is_dev_act = false;
   static bool is_init_done = false;
 /* ===============================GLOBAL VARIABLE END=========================================== */
+
+/* ===============================FORWARD DECLARATION START=========================================== */
+void jiot_nidd_send_c2d_ack(char *trans_id, jiot_nidd_cmn_header_t *header);
+/* ===============================FORWARD DECLARATION END=========================================== */
+
 /* ===============================FUNCTION START================================================== */
 /*-----------------------------------------------------------------------------------------------*/
 /**
@@ -207,7 +212,7 @@ bool jiot_nidd_conf_gen_create_file()
     bool ret_val = false;
     void *fd = NULL;
     char *buf = NULL;
-    int size = 0;
+//    int size = 0;
     int length = 0;
     int pal_ret = -1;
     filename = jiot_nidd_conf_gen_getfilepath(CONF_NIDDFS_ROOT,CONF_FILENAME);
@@ -217,7 +222,11 @@ bool jiot_nidd_conf_gen_create_file()
         // Deleting the existing file
         if (jiot_nidd_utility_file_open((unsigned char *)filename, E_NIDD_PAL_FILE_FLAG_READ, &fd) == 0)
         {
+#if 0
             jiot_client_PAL_File_close(fd);
+#else
+            jiot_nidd_utility_file_close(fd);
+#endif
             if (jiot_nidd_utility_file_remove(filename) != 0)
             {
                 JIOT_NIDD_LOG_E("Config File Deletion failed");
@@ -728,8 +737,8 @@ jiot_nidd_error_code_e jiot_nidd_parse_appact_response(jiot_nidd_app_params_t *a
 {
     JIOT_NIDD_LOG_D("entry : %s",__func__);
     jiot_nidd_json_err_e parse_result = {0};
-    int size = payload_len;
-    int length = 0;
+    //int size = payload_len;
+    //int length = 0;
     int retval = E_NIDD_ERROR_FAILURE;
     jiot_nidd_json_info_t info = {0};
     
@@ -954,7 +963,7 @@ jiot_nidd_error_code_e jiot_nidd_meta_data_message_response(uint16_t msgid , cha
         {
             JIOT_NIDD_LOG_E("semaphore_post : Failure");
             jiot_nidd_remove_msgid_from_list(msgid);
-            return;
+            return E_NIDD_ERROR_FAILURE;
         }
         if(jiot_nidd_remove_msgid_from_list(msgid) != E_NIDD_SUCCESS)
         {
@@ -1033,7 +1042,7 @@ void jiot_nidd_receive_data(void *recv_DLM)
 				
 				if(header.pkt_type == E_NIDD_PKT_PUBCON)
 				{
-					memcpy((void *)temp ,(void *)recv_buf + parsed_len,JIOT_NIDD_TRANS_ID_LEN);
+					memcpy((void *)temp ,(void *)(recv_buf + parsed_len),JIOT_NIDD_TRANS_ID_LEN);
 					parsed_len += JIOT_NIDD_TRANS_ID_LEN;
 					jiot_nidd_send_c2d_ack(temp,&header);
                     if(strcmp(temp,prev_trans_id)==0)
@@ -1043,7 +1052,7 @@ void jiot_nidd_receive_data(void *recv_DLM)
                     }
                     strncpy(prev_trans_id,temp,JIOT_NIDD_TRANS_ID_LEN);
 				}
-				memcpy((void *)temp ,(void *)recv_buf + parsed_len ,JIOT_NIDD_APP_ID_LEN);
+				memcpy((void *)temp ,(void *)(recv_buf + parsed_len) ,JIOT_NIDD_APP_ID_LEN);
 				temp[JIOT_NIDD_APP_ID_LEN] = 0x00;
                 parsed_len += JIOT_NIDD_APP_ID_LEN;
 
@@ -1234,7 +1243,7 @@ char *jiot_nidd_get_dev_metaData(void)
  * 
  */
 uint8_t * jiot_nidd_prepare_packet(jiot_nidd_cmn_header_t *header, char *topic, uint8_t *payload,\
-           uint16_t payloadLen, uint8_t *msg_id, uint16_t *length, char *trans_id)
+           uint16_t payloadLen, uint16_t *msg_id, uint16_t *length, char *trans_id)
 {
     JIOT_NIDD_LOG_D("entry : %s ",__func__);
     uint16_t topicNameLen = 0;
@@ -1330,7 +1339,7 @@ jiot_nidd_error_code_e jiot_nidd_activate_specific_app( char *appName, jiot_nidd
 	int retVal = E_NIDD_ERROR_FAILURE;
 	uint8_t *data = NULL;
 	uint16_t data_len = 0;
-	uint8_t msg_id = 0;
+	uint16_t msg_id = 0;
 
     if(app_params->plmid == NULL)
     {
@@ -1411,7 +1420,7 @@ jiot_nidd_error_code_e jiot_nidd_activate_default_app(jiot_nidd_cmn_header_t *he
     int retVal = E_NIDD_ERROR_FAILURE;
     uint8_t *data = NULL;
     uint16_t data_len = 0;
-    uint8_t msg_id = 0;
+    uint16_t msg_id = 0;
     char *dev_uid = NULL;
 
     meta_data = jiot_nidd_get_dev_metaData();
@@ -1973,7 +1982,7 @@ memfree:
 void jiot_nidd_send_c2d_ack(char *trans_id, jiot_nidd_cmn_header_t *header)
 {
     JIOT_NIDD_LOG_D("entry : %s",__func__);
-	uint8_t msg_id = 0;
+	uint16_t msg_id = 0;
 	uint8_t *c2d_data = NULL;
 	uint16_t length = 0;
 	int retVal = E_NIDD_ERROR_FAILURE;
@@ -2051,7 +2060,7 @@ jiot_nidd_error_code_e jiot_nidd_meta_data_formation(jiot_nidd_cmn_header_t *hea
     int retVal = E_NIDD_ERROR_FAILURE;
     uint8_t *data = NULL;
     uint16_t data_len = 0;
-    uint8_t msg_id = 0;
+    uint16_t msg_id = 0;
     char *dev_uid = NULL;
     jiot_nidd_meta_data_t *mymetaData = NULL;
     int RetVal = 0;
@@ -2199,7 +2208,7 @@ jiot_nidd_error_code_e jiot_nidd_deregister(jiot_nidd_handle_t *context)
     {
         JIOT_NIDD_LOG_E("Deregister : Failure");
     }
-    *context == NULL;
+    *context = NULL;
     return E_NIDD_SUCCESS;
 }
 /* ===============================FUNCTION END================================================== */

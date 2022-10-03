@@ -238,6 +238,35 @@ char *jiot_nidd_get_curent_timeStamp()
 	return time_stamp;
 }
 
+#define NIDD_MSGQ_SIZE  10 /* max 10 messages in queue*/
+#define NISS_MSGQ_ALIGN 4  /* align by 4-byte boundary */
+
+K_MSGQ_DEFINE(nidd_msgq, sizeof(jiot_nidd_osal_message_t), NIDD_MSGQ_SIZE, NISS_MSGQ_ALIGN);
+/* data item size is 8, i.e. two pointer address */
+
+#define MSGQ_THREAD_STACK_SIZE	KB(2)
+#define MSGQ_THREAD_PRIORITY	K_LOWEST_APPLICATION_THREAD_PRIO
+
+static struct k_thread msgq_thread;
+static K_THREAD_STACK_DEFINE(msgq_thread_stack, MSGQ_THREAD_STACK_SIZE);
+static k_tid_t msgq_thread_id;
+
+static void msgq_thread_func(void *p1, void *p2, void *p3)
+{
+	jiot_nidd_osal_message_t msg;
+
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	while (true) {
+		/* waiting to get a data item from queue without timeout*/
+		k_msgq_get(&nidd_msgq, &msg, K_FOREVER);
+		/* process data item */
+		msg.msgHandler(msg.message);
+	}
+}
+
 /*-----------------------------------------------------------------------------------------------*/
 /**
 *   jiot_nidd_osal_message_processor_create function will instantiate a JIOT message processor
@@ -247,7 +276,12 @@ char *jiot_nidd_get_curent_timeStamp()
 */
 jiot_nidd_osal_message_processor_t* jiot_nidd_osal_message_processor_create(jiot_nidd_osal_message_start_fn entry_fn)
 {
-	return NULL;
+	msgq_thread_id = k_thread_create(&msgq_thread, msgq_thread_stack, K_THREAD_STACK_SIZEOF(msgq_thread_stack),
+			msgq_thread_func, NULL, NULL, NULL, MSGQ_THREAD_PRIORITY, K_USER, K_NO_WAIT);
+
+	/* TO-DO: what to do with entry_fn */
+
+	return &nidd_msgq;
 }
 
 /*-----------------------------------------------------------------------------------------------*/
@@ -263,17 +297,35 @@ jiot_nidd_osal_message_processor_t* jiot_nidd_osal_message_processor_create(jiot
 */
 jiot_nidd_osal_err_e jiot_nidd_osal_message_processor_send(jiot_nidd_osal_message_processor_t* msgProcessor, jiot_nidd_osal_message_t* msg)
 {
+	ARG_UNUSED(msgProcessor);
+
+        while (k_msgq_put(&nidd_msgq, msg, K_NO_WAIT) != 0) {
+            /* message queue is full: purge old data & try again */
+            k_msgq_purge(&nidd_msgq);
+        }
+
 	return E_NIDD_OSAL_SUCCESS;
 }
 
 jiot_nidd_osal_message_t * jiot_nidd_osal_message_processor_readQueue(jiot_nidd_osal_message_processor_t*  msgProcessor)
 {
-	return NULL;
+	jiot_nidd_osal_message_t data;
+
+	ARG_UNUSED(msgProcessor);
+
+	if (k_msgq_peek(&nidd_msgq, &data) == 0) {
+		jiot_nidd_osal_message_t *msg = k_calloc(sizeof(jiot_nidd_osal_message_t), 1);
+		*msg = data;
+		return msg;  /* MUST be released at the caller */
+	} else {
+		return NULL;
+	}
 }
 
 int jiot_nidd_osal_message_processor_isdone(jiot_nidd_osal_message_processor_t*  msgProcessor)
 {
-	return 0;
+	/* TO-DO check message queue is empty or not? */
+	return k_msgq_num_used_get(&nidd_msgq);
 }
 
 /*-----------------------------------------------------------------------------------------------*/
@@ -286,7 +338,7 @@ int jiot_nidd_osal_message_processor_isdone(jiot_nidd_osal_message_processor_t* 
 */
 void jiot_nidd_osal_message_processor_destroy(jiot_nidd_osal_message_processor_t** handle)
 {
-	
+	/* Do nothing */
 }
 
 /*-----------------------------------------------------------------------------------------------*/
@@ -297,7 +349,7 @@ void jiot_nidd_osal_message_processor_destroy(jiot_nidd_osal_message_processor_t
 */
 void jiot_nidd_osal_message_processor_terminate(jiot_nidd_osal_message_processor_t*  msgProcessor)
 {
-	
+	k_thread_abort(msgq_thread_id);
 }
 
 /*-----------------------------------------------------------------------------------------------*/

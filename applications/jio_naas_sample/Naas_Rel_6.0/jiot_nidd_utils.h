@@ -44,15 +44,23 @@ extern "C"{
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <zephyr/kernel.h>
+
 /* ===============================INCLUDE END=================================================== */
 
 /* ===============================DEFINE START================================================= */
   #define JIOT_NIDD_JSON_MAX_TOKEN 	128
+#if 0
   #define JIOT_NIDD_LOG_E(...) jiot_nidd_log( E_NIDD_LOG_ERROR, __FILE__, __LINE__,##__VA_ARGS__ ) 
   #define JIOT_NIDD_LOG_W(...) jiot_nidd_log( E_NIDD_LOG_WARNING, __FILE__, __LINE__,##__VA_ARGS__ ) 
   #define JIOT_NIDD_LOG_I(...) jiot_nidd_log( E_NIDD_LOG_INFO, __FILE__, __LINE__,##__VA_ARGS__ ) 
   #define JIOT_NIDD_LOG_D(...) jiot_nidd_log( E_NIDD_LOG_DEBUG, __FILE__, __LINE__,##__VA_ARGS__ ) 
-
+#else
+  #define JIOT_NIDD_LOG_E(...)
+  #define JIOT_NIDD_LOG_W(...)
+  #define JIOT_NIDD_LOG_I(...)
+  #define JIOT_NIDD_LOG_D(...)
+#endif
   
 /* ===============================DEFINE END================================================= */
 
@@ -137,7 +145,7 @@ typedef enum
 *   jiot_nidd_osal_message_start_fn represent a start function for the thread to be created
 *
 */
-typedef void(*jiot_nidd_osal_message_start_fn)(void *);
+typedef void(*jiot_nidd_osal_message_start_fn)(void);
 
 /*-----------------------------------------------------------------------------------------------*/
 /**
@@ -163,7 +171,7 @@ typedef void(*jiot_nidd_osal_message_handler)(void*);
 *	EventGroupHandle_t event;
 *	}jiot_nidd_osal_message_processor_t;
 */
-typedef struct jiot_nidd_osal_message_processor jiot_nidd_osal_message_processor_t;
+typedef struct k_msgq jiot_nidd_osal_message_processor_t;
 
 /*-----------------------------------------------------------------------------------------------*/
 /**
@@ -178,7 +186,7 @@ typedef struct jiot_nidd_osal_message_processor jiot_nidd_osal_message_processor
 *   		SemaphoreHandle_t *sem;
 *		}jiot_nidd_osal_semaphore_t;
 */
-typedef struct jiot_nidd_osal_semaphore jiot_nidd_osal_semaphore_t;
+typedef struct k_sem jiot_nidd_osal_semaphore_t;
 
 /* ===============================TYPEDEF END================================================== */
 
