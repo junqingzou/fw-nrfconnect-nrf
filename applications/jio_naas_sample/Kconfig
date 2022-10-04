@@ -14,6 +14,8 @@ config NAAS_NORDIC
 	help
 	  Enable this flag to include NaaS adaption to Nordic nRF9160.
 
+if NAAS_NORDIC
+
 config NAAS_NORDIC_CONNECT_TIMEOUT
 	int "NIDD network registration timeout in seconds"
 	default 60
@@ -21,6 +23,11 @@ config NAAS_NORDIC_CONNECT_TIMEOUT
 config NAAS_NORDIC_NIDD_POLL_TIME
 	int "Poll time-out in seconds for NIDD connection"
 	default 10
+
+config NAAS_NORDIC_SIMULATION
+	bool "Simulated NaaS run on non-Jio network"
+
+endif #NAAS_NORDIC
 
 module = NAAS
 module-str = naas

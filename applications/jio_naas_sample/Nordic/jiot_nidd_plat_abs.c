@@ -77,7 +77,7 @@ static void cereg_mon(const char *notif)
 
 	cereg_status_str = cereg_str_get(cereg_status);
 	if (!cereg_status_str) {
-		LOG_INF("Registration status unknown: %d", cereg_status);
+		LOG_WRN("Registration status unknown: %d", cereg_status);
 		return;
 	}
 
@@ -85,7 +85,7 @@ static void cereg_mon(const char *notif)
 		LOG_INF("Registration status: %s", cereg_status_str);
 		EVT(E_NIDD_PLAT_EVENT_CHANNEL_ACTIVATE_IND, NULL, 0);
 	} else {
-		LOG_INF("Registration status: %s", cereg_status_str);
+		LOG_DBG("Registration status: %s", cereg_status_str);
 		EVT(E_NIDD_PLAT_EVENT_CHANNEL_DEACTIVATE_IND, NULL, 0);
 	}
 
@@ -162,10 +162,7 @@ jiot_plat_nidd_ret_e jiot_nidd_plat_connect(uint32_t* nidd_id, char* apn, jiot_n
 	int ret;
 	char cmd[128];
 
-	ARG_UNUSED(nidd_id);
-
-	LOG_DBG("jiot_nidd_plat_connect, id: %d, APN: %s", (int)*nidd_id, apn);
-
+	LOG_DBG("id: %d, APN: %s", (int)*nidd_id, apn);
 	event_handler = callback;
 
 	ret = nrf_modem_at_printf("AT%%XSYSTEMMODE=0,1,0,0");
@@ -173,14 +170,23 @@ jiot_plat_nidd_ret_e jiot_nidd_plat_connect(uint32_t* nidd_id, char* apn, jiot_n
 		LOG_ERR("Failed to set system mode: %d", ret);
 		return E_NIDD_PLAT_RET_ERROR;
 	}
+
 	/* As of now, primary PDP context only */
+#if defined(CONFIG_NAAS_NORDIC_SIMULATION)
+	sprintf(cmd, "AT+CGDCONT=0,\"Non-IP\"");
+#else
 	sprintf(cmd, "AT+CGDCONT=0,\"Non-IP\",\"%s\"", apn);
+#endif
 	ret = nrf_modem_at_printf(cmd);
 	if (ret) {
 		LOG_ERR("Failed to configure PDN: %d", ret);
 		return E_NIDD_PLAT_RET_ERROR;
 	}
-
+	ret = nrf_modem_at_printf("AT+CEREG=1");
+	if (ret) {
+		LOG_ERR("Failed to get register status: %d", ret);
+		return E_NIDD_PLAT_RET_ERROR;
+	}
 	LOG_INF("Connecting to network, timeout in %d sec", CONFIG_NAAS_NORDIC_CONNECT_TIMEOUT);
 	ret = nrf_modem_at_printf("AT+CFUN=1");
 	if (ret) {
@@ -189,15 +195,16 @@ jiot_plat_nidd_ret_e jiot_nidd_plat_connect(uint32_t* nidd_id, char* apn, jiot_n
 	}
 	ret = k_sem_take(&reg_sem, K_SECONDS(CONFIG_NAAS_NORDIC_CONNECT_TIMEOUT));
 	if (cereg_status == HOME) {
-		LOG_INF("Network connection ready");
+		LOG_DBG("Network connection ready");
 	} else {
 		if (ret == -EAGAIN) {
 			LOG_WRN("Network connection timed out");
+			(void)nrf_modem_at_printf("AT+CFUN=0");
 		}
 		return E_NIDD_PLAT_RET_INACTIVE_ERROR;
 	}
 
-	nidd_sock = socket(AF_INET6, SOCK_RAW, IPPROTO_IP);
+	nidd_sock = socket(AF_PACKET, SOCK_RAW, IPPROTO_IP);
 	if (nidd_sock < 0) {
 		LOG_ERR("socket() failed: %d", -errno);
 		return E_NIDD_PLAT_RET_ERROR;
@@ -206,6 +213,7 @@ jiot_plat_nidd_ret_e jiot_nidd_plat_connect(uint32_t* nidd_id, char* apn, jiot_n
 	nidd_thread_id = k_thread_create(&nidd_thread, nidd_thread_stack, K_THREAD_STACK_SIZEOF(nidd_thread_stack),
 			nidd_thread_func, NULL, NULL, NULL, THREAD_PRIORITY, K_USER, K_NO_WAIT);
 
+	LOG_INF("NIDD connected");
 	return E_NIDD_PLAT_RET_OK;
 }
 
@@ -219,9 +227,7 @@ bool jiot_nidd_plat_is_nidd_activated(uint32_t nidd_id)
 	int ret;
 	char pdp_type[8] = {0};
 
-	ARG_UNUSED(nidd_id);
-
-	LOG_DBG("jiot_nidd_plat_is_nidd_activated, id: %d", nidd_id);
+	LOG_DBG("id: %d", nidd_id);
 
 	ret = nrf_modem_at_scanf("AT+GDCONT?",
 		"+GDCONT: "
@@ -252,9 +258,7 @@ jiot_plat_nidd_ret_e jiot_nidd_plat_send_data(uint32_t nidd_id, void* data, uint
 {
 	int ret;
 
-	ARG_UNUSED(nidd_id);
-
-	LOG_DBG("jiot_nidd_plat_send_data, id: %d", nidd_id);
+	LOG_DBG("id: %d, len: %d", nidd_id, length);
 	LOG_HEXDUMP_DBG(data, length, "nidd-send");
 
 	ret = send(nidd_sock, data, length, 0);

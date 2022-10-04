@@ -32,7 +32,7 @@ static struct k_sem nidd_sem;
 */
 void jiot_nidd_dumphex(uint8_t *buffer, uint32_t buffer_len)
 {
-	LOG_HEXDUMP_INF(buffer, buffer_len, "nidd");
+	LOG_HEXDUMP_INF(buffer, buffer_len, "dumphex");
 }
 
 /*-----------------------------------------------------------------------------------------------*/
@@ -95,7 +95,7 @@ jiot_nidd_json_err_e jiot_nidd_json_parse_get_value(const char * json_buffer,con
 		}
 		info->type = E_NIDD_JSON_PRIMITIVE;
 		*data = json_data_obj->valueint;
-		output = (char **)&data;
+		*output = (char *)data;
 	} else if (cJSON_IsString(json_data_obj)) {
 		char *data = k_calloc(strlen(json_data_obj->valuestring), sizeof(char));
 		if (data == NULL) {
@@ -104,7 +104,7 @@ jiot_nidd_json_err_e jiot_nidd_json_parse_get_value(const char * json_buffer,con
 		}
 		strcpy(data, json_data_obj->valuestring);
 		info->type = E_NIDD_JSON_STRING;
-		output = &data;
+		*output = data;
 	} else if (cJSON_IsArray(json_data_obj)) {
 		LOG_WRN("JSON array type not supported");
 		info->type = E_NIDD_JSON_ARRAY;
@@ -138,6 +138,7 @@ cleanup:
  */
 void* jiot_nidd_utility_malloc(size_t nbytes)
 {
+	//LOG_DBG("malloc %d bytes", nbytes);
 	return k_malloc(nbytes);
 }
 
@@ -152,6 +153,7 @@ void* jiot_nidd_utility_malloc(size_t nbytes)
  */
 void* jiot_nidd_utility_calloc(size_t nmemb, size_t size)
 {
+	//LOG_DBG("calloc %d x %d bytes", nmemb, size);
 	return k_calloc(nmemb, size);
 }
 
@@ -189,8 +191,8 @@ void jiot_nidd_get_dev_uniqueId(char **dev_uid)
 		dev_uid = NULL;
 		return;
 	}
-	ret = nrf_modem_at_cmd("AT+CGSN=1", sizeof(at_rsp), "%s", at_rsp);
-	if (ret < 0) {
+	ret = nrf_modem_at_cmd(at_rsp, sizeof(at_rsp), "AT+CGSN");
+	if (ret < 0  || strlen(at_rsp) < IMEI_SIZE) {
 		LOG_ERR("Failed to read IMEI: %d", ret);
 		k_free(uid);
 		dev_uid = NULL;
@@ -199,17 +201,18 @@ void jiot_nidd_get_dev_uniqueId(char **dev_uid)
 	strncpy(uid, at_rsp, IMEI_SIZE);
 	strcat(uid, "--");
 
-	ret = nrf_modem_at_cmd("AT+CIMI", sizeof(at_rsp), "%s", at_rsp);
-	if (ret < 0) {
+	ret = nrf_modem_at_cmd(at_rsp, sizeof(at_rsp), "AT+CIMI");
+	if (ret < 0 || strlen(at_rsp) < IMSI_SIZE) {
 		LOG_ERR("Failed to read IMSI: %d", ret);
 		k_free(uid);
 		dev_uid = NULL;
 		return;
 	}
 	strncpy(uid + IMEI_SIZE + 2, at_rsp, IMSI_SIZE);
+	//strcat(uid, "\0"); /* null terminator */
 
-	LOG_DBG("nidd_get_dev_uniqueId: %s", uid);
-	dev_uid = &uid;
+	LOG_DBG("%s", uid);
+	*dev_uid = uid;
 }
 
 /*-----------------------------------------------------------------------------------------------*/
@@ -362,7 +365,14 @@ void jiot_nidd_osal_message_processor_terminate(jiot_nidd_osal_message_processor
 */
 jiot_nidd_osal_semaphore_t* jiot_nidd_osal_semaphore_create(unsigned int semValue)
 {
-	if (k_sem_init(&nidd_sem, 0, semValue) != 0) {
+	int ret;
+
+	if (semValue == 0 || semValue > K_SEM_MAX_LIMIT) {
+		ret = k_sem_init(&nidd_sem, 0, K_SEM_MAX_LIMIT);
+	} else {
+		ret = k_sem_init(&nidd_sem, 0, semValue);
+	}
+	if (ret != 0) {
 		LOG_ERR("Failed to init semaphore");
 		return NULL;
 	}

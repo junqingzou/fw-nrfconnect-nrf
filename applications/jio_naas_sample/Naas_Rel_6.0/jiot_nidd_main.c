@@ -40,9 +40,13 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <zephyr/logging/log.h>
 #include "jiot_nidd_api.h"
 #include "jiot_nidd_utils.h"
 #include "jiot_nidd_plat_abs.h"
+
+LOG_MODULE_REGISTER(naas, CONFIG_NAAS_LOG_LEVEL);
+
 /* ===============================INCLUDE END=================================================== */
 
 /* ===============================DEFINE START================================================= */
@@ -1454,9 +1458,12 @@ jiot_nidd_error_code_e jiot_nidd_activate_default_app(jiot_nidd_cmn_header_t *he
         retVal = E_NIDD_ERROR_NO_MEMORY;
         goto memfree;
     }
-    
+
+#if !defined(CONFIG_NAAS_NORDIC_SIMULATION)
+    /* DUMP in SEND/RECEIV interface */
     jiot_nidd_dumphex((void *)data,data_len);
-    
+#endif
+
     retVal = jiot_nidd_plat_send_data(jiot_nidd_id,(void *)data,data_len);
     if(retVal != E_NIDD_PLAT_RET_OK)
     {
@@ -1474,7 +1481,11 @@ jiot_nidd_error_code_e jiot_nidd_activate_default_app(jiot_nidd_cmn_header_t *he
         }
 
     }
-        
+
+#if defined(CONFIG_NAAS_NORDIC_SIMULATION)
+	retVal = E_NIDD_SUCCESS;
+#else
+/* requires reply from Jio network */
     if((jiot_nidd_osal_semaphore_wait(nidd_sem_handler,60000) == 0) && (app_params->plmid != NULL))
     {
         retVal = E_NIDD_SUCCESS;
@@ -1483,6 +1494,7 @@ jiot_nidd_error_code_e jiot_nidd_activate_default_app(jiot_nidd_cmn_header_t *he
 	{
 		retVal = E_NIDD_ERROR_FAILURE;
 	}
+#endif
 
     memfree:
     if(dev_uid)
@@ -1580,6 +1592,21 @@ jiot_nidd_error_code_e jiot_nidd_registration(char *appName, jiot_nidd_handle_t 
 
             JIOT_NIDD_LOG_E("Device Activation Failed Ret value = %d",retVal);
             return E_NIDD_ERROR_FAILURE;
+#if defined(CONFIG_NAAS_NORDIC_SIMULATION)
+	} else {
+		retVal = jiot_nidd_add_app_params_to_list(app_parameters);
+		if(retVal != E_NIDD_SUCCESS) {
+			if(app_parameters) {
+				jiot_nidd_utility_free(app_parameters);
+			}
+			return E_NIDD_ERROR_FAILURE;
+		}
+		if(app_parameters) {
+			*context = (void *)app_parameters;
+		}
+	}
+#else
+/* requires PLMID from Jio network */
         }
 
         is_dev_act = false;
@@ -1612,7 +1639,8 @@ jiot_nidd_error_code_e jiot_nidd_registration(char *appName, jiot_nidd_handle_t 
             JIOT_NIDD_LOG_E("some params of app_params is NULL");
             return E_NIDD_ERROR_INVALID_PARAM;
         }
-    
+#endif
+
     return E_NIDD_SUCCESS;
 }
 

@@ -14,7 +14,7 @@
 #include "jiot_nidd_api.h"
 #include "jiot_nidd_utils.h"
 
-LOG_MODULE_REGISTER(naas, CONFIG_NAAS_LOG_LEVEL);
+LOG_MODULE_REGISTER(main, CONFIG_NAAS_LOG_LEVEL);
 
 #define APPNAME "RJIL_JioConnectedWorker"
 #define EVENT "alerts"
@@ -272,3 +272,34 @@ jiot_nidd_app_error_code_e jiot_nidd_test_flow(int count){
     return retVal;
 }
 
+int main(void)
+{
+	//jiot_nidd_app_error_code_e retVal;
+	int retVal;
+
+	LOG_INF("Jio NAAS test start");
+
+	retVal = jiot_nidd_test_registartion();
+	if(retVal != E_NIDD_APP_SUCCESS)
+	{
+		LOG_DBG("Registration : Failed");
+		return E_NIDD_APP_ERROR_FAILURE;
+	}
+#if !defined(CONFIG_NAAS_NORDIC_SIMULATION)
+	retVal = jiot_nidd_test_send();
+	if(retVal != E_NIDD_APP_SUCCESS)
+	{
+		LOG_DBG("send : Failed");
+		return E_NIDD_APP_ERROR_FAILURE;
+	}
+#endif
+	retVal = jiot_nidd_test_deregistartion();
+	if(retVal != E_NIDD_APP_SUCCESS)
+	{
+		LOG_DBG("Deregistration : Failed");
+		return E_NIDD_APP_ERROR_FAILURE;
+	}
+
+	LOG_INF("Jio NAAS test end");
+	return E_NIDD_APP_SUCCESS;
+}
