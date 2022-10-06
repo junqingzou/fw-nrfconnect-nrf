@@ -210,6 +210,9 @@ jiot_plat_nidd_ret_e jiot_nidd_plat_connect(uint32_t* nidd_id, char* apn, jiot_n
 		return E_NIDD_PLAT_RET_ERROR;
 	}
 
+	/* the generated nidd id means the socket handle */
+	*nidd_id = nidd_sock;
+
 	nidd_thread_id = k_thread_create(&nidd_thread, nidd_thread_stack, K_THREAD_STACK_SIZEOF(nidd_thread_stack),
 			nidd_thread_func, NULL, NULL, NULL, THREAD_PRIORITY, K_USER, K_NO_WAIT);
 
