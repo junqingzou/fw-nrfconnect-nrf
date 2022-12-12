@@ -142,7 +142,7 @@ static void nidd_thread_func(void *p1, void *p2, void *p3)
 		if (ret == 0) {
 			continue;
 		}
-		LOG_HEXDUMP_DBG(rx_data, ret, "nidd-receive");
+		//LOG_HEXDUMP_DBG(rx_data, ret, "nidd-receive");
 		EVT(E_NIDD_PLAT_EVENT_DATA_IND, rx_data, ret);
 	} while (true);
 
@@ -262,7 +262,7 @@ jiot_plat_nidd_ret_e jiot_nidd_plat_send_data(uint32_t nidd_id, void* data, uint
 	int ret;
 
 	LOG_DBG("id: %d, len: %d", nidd_id, length);
-	LOG_HEXDUMP_DBG(data, length, "nidd-send");
+	//LOG_HEXDUMP_DBG(data, length, "nidd-send");
 
 	ret = send(nidd_sock, data, length, 0);
 	if (ret < 0) {

@@ -226,10 +226,10 @@ bool jiot_nidd_conf_gen_create_file()
         // Deleting the existing file
         if (jiot_nidd_utility_file_open((unsigned char *)filename, E_NIDD_PAL_FILE_FLAG_READ, &fd) == 0)
         {
-#if 0
-            jiot_client_PAL_File_close(fd);
-#else
+#if defined(CONFIG_NAAS_NORDIC)
             jiot_nidd_utility_file_close(fd);
+#else
+            jiot_client_PAL_File_close(fd);
 #endif
             if (jiot_nidd_utility_file_remove(filename) != 0)
             {
@@ -1371,8 +1371,7 @@ jiot_nidd_error_code_e jiot_nidd_activate_specific_app( char *appName, jiot_nidd
 		goto memfree;
 	}
 
-    /* DUMP in SEND/RECEIV interface */
-    /* jiot_nidd_dumphex((void *)data,data_len); */
+    jiot_nidd_dumphex((void *)data,data_len);
 
     retVal = jiot_nidd_plat_send_data(jiot_nidd_id,(void *)data,data_len);
     if(retVal != E_NIDD_PLAT_RET_OK)
@@ -1459,10 +1458,9 @@ jiot_nidd_error_code_e jiot_nidd_activate_default_app(jiot_nidd_cmn_header_t *he
         retVal = E_NIDD_ERROR_NO_MEMORY;
         goto memfree;
     }
-
-    /* DUMP in SEND/RECEIV interface */
-    /* jiot_nidd_dumphex((void *)data,data_len) */;
-
+    
+    jiot_nidd_dumphex((void *)data,data_len);
+    
     retVal = jiot_nidd_plat_send_data(jiot_nidd_id,(void *)data,data_len);
     if(retVal != E_NIDD_PLAT_RET_OK)
     {
@@ -1481,10 +1479,6 @@ jiot_nidd_error_code_e jiot_nidd_activate_default_app(jiot_nidd_cmn_header_t *he
 
     }
 
-#if defined(CONFIG_NAAS_NORDIC_SIMULATION)
-	retVal = E_NIDD_SUCCESS;
-#else
-/* requires reply from Jio network */
     if((jiot_nidd_osal_semaphore_wait(nidd_sem_handler,60000) == 0) && (app_params->plmid != NULL))
     {
         retVal = E_NIDD_SUCCESS;
@@ -1493,7 +1487,6 @@ jiot_nidd_error_code_e jiot_nidd_activate_default_app(jiot_nidd_cmn_header_t *he
 	{
 		retVal = E_NIDD_ERROR_FAILURE;
 	}
-#endif
 
     memfree:
     if(dev_uid)
@@ -1591,20 +1584,6 @@ jiot_nidd_error_code_e jiot_nidd_registration(char *appName, jiot_nidd_handle_t 
 
             JIOT_NIDD_LOG_E("Device Activation Failed Ret value = %d",retVal);
             return E_NIDD_ERROR_FAILURE;
-#if defined(CONFIG_NAAS_NORDIC_SIMULATION)
-	} else {
-		retVal = jiot_nidd_add_app_params_to_list(app_parameters);
-		if(retVal != E_NIDD_SUCCESS) {
-			if(app_parameters) {
-				jiot_nidd_utility_free(app_parameters);
-			}
-			return E_NIDD_ERROR_FAILURE;
-		}
-		if(app_parameters) {
-			*context = (void *)app_parameters;
-		}
-	}
-#else
         }
 
         is_dev_act = false;
@@ -1637,7 +1616,6 @@ jiot_nidd_error_code_e jiot_nidd_registration(char *appName, jiot_nidd_handle_t 
             JIOT_NIDD_LOG_E("some params of app_params is NULL");
             return E_NIDD_ERROR_INVALID_PARAM;
         }
-#endif
 
     return E_NIDD_SUCCESS;
 }

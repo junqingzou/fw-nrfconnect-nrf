@@ -286,7 +286,6 @@ int main(void)
 		return E_NIDD_APP_ERROR_FAILURE;
 	}
 #if 0
-//#if !defined(CONFIG_NAAS_NORDIC_SIMULATION)
 	retVal = jiot_nidd_test_send();
 	if(retVal != E_NIDD_APP_SUCCESS)
 	{

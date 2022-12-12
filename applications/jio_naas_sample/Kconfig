@@ -24,9 +24,6 @@ config NAAS_NORDIC_NIDD_POLL_TIME
 	int "Poll time-out in seconds for NIDD connection"
 	default 10
 
-config NAAS_NORDIC_SIMULATION
-	bool "Simulated NaaS run on non-Jio network"
-
 endif #NAAS_NORDIC
 
 module = NAAS

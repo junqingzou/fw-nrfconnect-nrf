@@ -50,16 +50,17 @@ extern "C"{
 
 /* ===============================DEFINE START================================================= */
   #define JIOT_NIDD_JSON_MAX_TOKEN 	128
-#if 0
+
+#if defined(CONFIG_NAAS_NORDIC)
+  #define JIOT_NIDD_LOG_E	LOG_ERR
+  #define JIOT_NIDD_LOG_W	LOG_WRN
+  #define JIOT_NIDD_LOG_I	LOG_INF
+  #define JIOT_NIDD_LOG_D(...)	/* disable for now */
+#else
   #define JIOT_NIDD_LOG_E(...) jiot_nidd_log( E_NIDD_LOG_ERROR, __FILE__, __LINE__,##__VA_ARGS__ ) 
   #define JIOT_NIDD_LOG_W(...) jiot_nidd_log( E_NIDD_LOG_WARNING, __FILE__, __LINE__,##__VA_ARGS__ ) 
   #define JIOT_NIDD_LOG_I(...) jiot_nidd_log( E_NIDD_LOG_INFO, __FILE__, __LINE__,##__VA_ARGS__ ) 
   #define JIOT_NIDD_LOG_D(...) jiot_nidd_log( E_NIDD_LOG_DEBUG, __FILE__, __LINE__,##__VA_ARGS__ ) 
-#else
-  #define JIOT_NIDD_LOG_E	LOG_ERR
-  #define JIOT_NIDD_LOG_W	LOG_WRN
-  #define JIOT_NIDD_LOG_I	LOG_INF
-  #define JIOT_NIDD_LOG_D(...)
 #endif
   
 /* ===============================DEFINE END================================================= */
