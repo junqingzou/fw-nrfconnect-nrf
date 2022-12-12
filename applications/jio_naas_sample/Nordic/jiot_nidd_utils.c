@@ -248,7 +248,6 @@ K_MSGQ_DEFINE(nidd_msgq, sizeof(jiot_nidd_osal_message_t), NIDD_MSGQ_SIZE, NISS_
 
 #define MSGQ_THREAD_STACK_SIZE	KB(2)
 #define MSGQ_THREAD_PRIORITY	K_LOWEST_APPLICATION_THREAD_PRIO
-#define MSGQ_THREAD_NAME	"msgq-thread"
 
 static struct k_thread msgq_thread;
 static K_THREAD_STACK_DEFINE(msgq_thread_stack, MSGQ_THREAD_STACK_SIZE);
@@ -262,7 +261,6 @@ static void msgq_thread_func(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	k_thread_name_set(NULL, MSGQ_THREAD_NAME);
 	while (true) {
 		/* waiting to get a data item from queue without timeout*/
 		k_msgq_get(&nidd_msgq, &msg, K_FOREVER);
@@ -280,13 +278,6 @@ static void msgq_thread_func(void *p1, void *p2, void *p3)
 */
 jiot_nidd_osal_message_processor_t* jiot_nidd_osal_message_processor_create(jiot_nidd_osal_message_start_fn entry_fn)
 {
-	const char *thread_name = k_thread_name_get(msgq_thread_id);
-
-	/* Protect from multiple creation */
-	if (thread_name != NULL && strcmp(thread_name, MSGQ_THREAD_NAME) == 0) {
-		return NULL;
-	}
-
 	msgq_thread_id = k_thread_create(&msgq_thread, msgq_thread_stack, K_THREAD_STACK_SIZEOF(msgq_thread_stack),
 			msgq_thread_func, NULL, NULL, NULL, MSGQ_THREAD_PRIORITY, K_USER, K_NO_WAIT);
 

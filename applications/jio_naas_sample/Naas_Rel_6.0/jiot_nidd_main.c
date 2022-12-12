@@ -1371,7 +1371,8 @@ jiot_nidd_error_code_e jiot_nidd_activate_specific_app( char *appName, jiot_nidd
 		goto memfree;
 	}
 
-    jiot_nidd_dumphex((void *)data,data_len);
+    /* DUMP in SEND/RECEIV interface */
+    /* jiot_nidd_dumphex((void *)data,data_len); */
 
     retVal = jiot_nidd_plat_send_data(jiot_nidd_id,(void *)data,data_len);
     if(retVal != E_NIDD_PLAT_RET_OK)
@@ -1459,10 +1460,8 @@ jiot_nidd_error_code_e jiot_nidd_activate_default_app(jiot_nidd_cmn_header_t *he
         goto memfree;
     }
 
-#if !defined(CONFIG_NAAS_NORDIC_SIMULATION)
     /* DUMP in SEND/RECEIV interface */
-    jiot_nidd_dumphex((void *)data,data_len);
-#endif
+    /* jiot_nidd_dumphex((void *)data,data_len) */;
 
     retVal = jiot_nidd_plat_send_data(jiot_nidd_id,(void *)data,data_len);
     if(retVal != E_NIDD_PLAT_RET_OK)
@@ -1606,7 +1605,6 @@ jiot_nidd_error_code_e jiot_nidd_registration(char *appName, jiot_nidd_handle_t 
 		}
 	}
 #else
-/* requires PLMID from Jio network */
         }
 
         is_dev_act = false;

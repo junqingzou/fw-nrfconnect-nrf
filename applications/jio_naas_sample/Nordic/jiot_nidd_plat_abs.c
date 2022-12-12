@@ -194,7 +194,7 @@ jiot_plat_nidd_ret_e jiot_nidd_plat_connect(uint32_t* nidd_id, char* apn, jiot_n
 		return E_NIDD_PLAT_RET_ERROR;
 	}
 	ret = k_sem_take(&reg_sem, K_SECONDS(CONFIG_NAAS_NORDIC_CONNECT_TIMEOUT));
-	if (cereg_status == HOME) {
+	if (cereg_status == HOME || cereg_status == ROAMING) {
 		LOG_DBG("Network connection ready");
 	} else {
 		if (ret == -EAGAIN) {

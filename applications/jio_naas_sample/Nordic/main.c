@@ -285,7 +285,8 @@ int main(void)
 		LOG_DBG("Registration : Failed");
 		return E_NIDD_APP_ERROR_FAILURE;
 	}
-#if !defined(CONFIG_NAAS_NORDIC_SIMULATION)
+#if 0
+//#if !defined(CONFIG_NAAS_NORDIC_SIMULATION)
 	retVal = jiot_nidd_test_send();
 	if(retVal != E_NIDD_APP_SUCCESS)
 	{

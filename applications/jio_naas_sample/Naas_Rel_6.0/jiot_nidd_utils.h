@@ -56,9 +56,9 @@ extern "C"{
   #define JIOT_NIDD_LOG_I(...) jiot_nidd_log( E_NIDD_LOG_INFO, __FILE__, __LINE__,##__VA_ARGS__ ) 
   #define JIOT_NIDD_LOG_D(...) jiot_nidd_log( E_NIDD_LOG_DEBUG, __FILE__, __LINE__,##__VA_ARGS__ ) 
 #else
-  #define JIOT_NIDD_LOG_E(...)
-  #define JIOT_NIDD_LOG_W(...)
-  #define JIOT_NIDD_LOG_I(...)
+  #define JIOT_NIDD_LOG_E	LOG_ERR
+  #define JIOT_NIDD_LOG_W	LOG_WRN
+  #define JIOT_NIDD_LOG_I	LOG_INF
   #define JIOT_NIDD_LOG_D(...)
 #endif
   
