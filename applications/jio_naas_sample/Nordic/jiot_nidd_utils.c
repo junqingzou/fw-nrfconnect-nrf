@@ -20,6 +20,8 @@ LOG_MODULE_REGISTER(utils, CONFIG_NAAS_LOG_LEVEL);
 #define IMSI_SIZE 15
 
 static struct k_sem nidd_sem;
+static struct k_fifo nidd_fifo;
+static struct k_work nidd_work;
 
 /*-----------------------------------------------------------------------------------------------*/
 /**
@@ -240,32 +242,24 @@ char *jiot_nidd_get_curent_timeStamp()
 	return time_stamp;
 }
 
-#define NIDD_MSGQ_SIZE  10 /* max 10 messages in queue*/
-#define NISS_MSGQ_ALIGN 4  /* align by 4-byte boundary */
-
-K_MSGQ_DEFINE(nidd_msgq, sizeof(jiot_nidd_osal_message_t), NIDD_MSGQ_SIZE, NISS_MSGQ_ALIGN);
-/* data item size is 8, i.e. two pointer address */
-
-#define MSGQ_THREAD_STACK_SIZE	KB(2)
-#define MSGQ_THREAD_PRIORITY	K_LOWEST_APPLICATION_THREAD_PRIO
-
-static struct k_thread msgq_thread;
-static K_THREAD_STACK_DEFINE(msgq_thread_stack, MSGQ_THREAD_STACK_SIZE);
-static k_tid_t msgq_thread_id;
-
-static void msgq_thread_func(void *p1, void *p2, void *p3)
+static void jiot_nidd_wk(struct k_work *work)
 {
-	jiot_nidd_osal_message_t msg;
+	ARG_UNUSED(work);
 
-	ARG_UNUSED(p1);
-	ARG_UNUSED(p2);
-	ARG_UNUSED(p3);
-
-	while (true) {
-		/* waiting to get a data item from queue without timeout*/
-		k_msgq_get(&nidd_msgq, &msg, K_FOREVER);
-		/* process data item */
-		msg.msgHandler(msg.message);
+	/* process a message */
+	jiot_nidd_osal_message_t *msg = (jiot_nidd_osal_message_t *)k_fifo_get(&nidd_fifo, K_NO_WAIT);
+	if (msg != NULL) {
+		if (msg->msgHandler != NULL) {
+			LOG_DBG("Process a message");
+			msg->msgHandler(msg->message);
+		} else {
+			LOG_WRN("Drop a message with no handler");
+		}
+		jiot_nidd_utility_free((void *)msg);
+	}
+	/* process next message if exists */
+	if (!k_fifo_is_empty(&nidd_fifo)) {
+		k_work_submit(&nidd_work);
 	}
 }
 
@@ -278,12 +272,16 @@ static void msgq_thread_func(void *p1, void *p2, void *p3)
 */
 jiot_nidd_osal_message_processor_t* jiot_nidd_osal_message_processor_create(jiot_nidd_osal_message_start_fn entry_fn)
 {
-	msgq_thread_id = k_thread_create(&msgq_thread, msgq_thread_stack, K_THREAD_STACK_SIZEOF(msgq_thread_stack),
-			msgq_thread_func, NULL, NULL, NULL, MSGQ_THREAD_PRIORITY, K_USER, K_NO_WAIT);
+	/* disregard start function*/
+	ARG_UNUSED(entry_fn);
+	LOG_DBG("entry");
 
-	/* TO-DO: what to do with entry_fn */
+	/* Use FIFO to hold received messages */
+	k_fifo_init(&nidd_fifo);
+	/* Use system work queue to scheduling message handling */
+	k_work_init(&nidd_work, jiot_nidd_wk);
 
-	return &nidd_msgq;
+	return &nidd_fifo;
 }
 
 /*-----------------------------------------------------------------------------------------------*/
@@ -300,34 +298,33 @@ jiot_nidd_osal_message_processor_t* jiot_nidd_osal_message_processor_create(jiot
 jiot_nidd_osal_err_e jiot_nidd_osal_message_processor_send(jiot_nidd_osal_message_processor_t* msgProcessor, jiot_nidd_osal_message_t* msg)
 {
 	ARG_UNUSED(msgProcessor);
+	LOG_DBG("entry");
 
-        while (k_msgq_put(&nidd_msgq, msg, K_NO_WAIT) != 0) {
-            /* message queue is full: purge old data & try again */
-            k_msgq_purge(&nidd_msgq);
-        }
+	k_fifo_put(&nidd_fifo, msg);
+	/* Submit to system work queue if not busy */
+	if (!k_work_is_pending(&nidd_work)) {
+		k_work_submit(&nidd_work);
+	}
 
 	return E_NIDD_OSAL_SUCCESS;
 }
 
 jiot_nidd_osal_message_t * jiot_nidd_osal_message_processor_readQueue(jiot_nidd_osal_message_processor_t*  msgProcessor)
 {
-	jiot_nidd_osal_message_t data;
-
 	ARG_UNUSED(msgProcessor);
+	LOG_DBG("entry");
 
-	if (k_msgq_peek(&nidd_msgq, &data) == 0) {
-		jiot_nidd_osal_message_t *msg = k_calloc(sizeof(jiot_nidd_osal_message_t), 1);
-		*msg = data;
-		return msg;  /* MUST be released at the caller */
-	} else {
-		return NULL;
-	}
+	/* dummpy implement */
+	return NULL;
 }
 
 int jiot_nidd_osal_message_processor_isdone(jiot_nidd_osal_message_processor_t*  msgProcessor)
 {
-	/* TO-DO check message queue is empty or not? */
-	return k_msgq_num_used_get(&nidd_msgq);
+	ARG_UNUSED(msgProcessor);
+	LOG_DBG("entry");
+
+	/* dummpy implement */
+	return k_fifo_is_empty(&nidd_fifo);
 }
 
 /*-----------------------------------------------------------------------------------------------*/
@@ -340,7 +337,10 @@ int jiot_nidd_osal_message_processor_isdone(jiot_nidd_osal_message_processor_t* 
 */
 void jiot_nidd_osal_message_processor_destroy(jiot_nidd_osal_message_processor_t** handle)
 {
-	/* Do nothing */
+	ARG_UNUSED(handle);
+	LOG_DBG("entry");
+
+	/* dummpy implement */
 }
 
 /*-----------------------------------------------------------------------------------------------*/
@@ -351,7 +351,10 @@ void jiot_nidd_osal_message_processor_destroy(jiot_nidd_osal_message_processor_t
 */
 void jiot_nidd_osal_message_processor_terminate(jiot_nidd_osal_message_processor_t*  msgProcessor)
 {
-	k_thread_abort(msgq_thread_id);
+	ARG_UNUSED(msgProcessor);
+	LOG_DBG("entry");
+
+	/* dummpy implement */
 }
 
 /*-----------------------------------------------------------------------------------------------*/

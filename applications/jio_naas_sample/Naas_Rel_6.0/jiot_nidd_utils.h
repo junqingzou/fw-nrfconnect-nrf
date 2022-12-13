@@ -172,7 +172,7 @@ typedef void(*jiot_nidd_osal_message_handler)(void*);
 *	EventGroupHandle_t event;
 *	}jiot_nidd_osal_message_processor_t;
 */
-typedef struct k_msgq jiot_nidd_osal_message_processor_t;
+typedef struct k_fifo jiot_nidd_osal_message_processor_t;
 
 /*-----------------------------------------------------------------------------------------------*/
 /**
