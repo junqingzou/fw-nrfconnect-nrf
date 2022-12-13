@@ -44,7 +44,9 @@ extern "C"{
 
 #include <stdint.h>
 #include <stdbool.h>
+#if defined(CONFIG_NAAS_NORDIC)
 #include <zephyr/kernel.h>
+#endif
 
 /* ===============================INCLUDE END=================================================== */
 
@@ -172,7 +174,11 @@ typedef void(*jiot_nidd_osal_message_handler)(void*);
 *	EventGroupHandle_t event;
 *	}jiot_nidd_osal_message_processor_t;
 */
-typedef struct k_fifo jiot_nidd_osal_message_processor_t;
+#if defined(CONFIG_NAAS_NORDIC)
+typedef struct k_work jiot_nidd_osal_message_processor_t;
+#else
+typedef struct jiot_nidd_osal_message_processor jiot_nidd_osal_message_processor_t;
+#endif
 
 /*-----------------------------------------------------------------------------------------------*/
 /**
@@ -187,7 +193,11 @@ typedef struct k_fifo jiot_nidd_osal_message_processor_t;
 *   		SemaphoreHandle_t *sem;
 *		}jiot_nidd_osal_semaphore_t;
 */
+#if defined(CONFIG_NAAS_NORDIC)
 typedef struct k_sem jiot_nidd_osal_semaphore_t;
+#else
+typedef struct jiot_nidd_osal_semaphore jiot_nidd_osal_semaphore_t;
+#endif
 
 /* ===============================TYPEDEF END================================================== */
 

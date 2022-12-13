@@ -40,12 +40,14 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <zephyr/logging/log.h>
 #include "jiot_nidd_api.h"
 #include "jiot_nidd_utils.h"
 #include "jiot_nidd_plat_abs.h"
+#if defined(CONFIG_NAAS_NORDIC)
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(naas, CONFIG_NAAS_LOG_LEVEL);
+#endif
 
 /* ===============================INCLUDE END=================================================== */
 
@@ -1170,7 +1172,7 @@ static void jiot_nidd_plat_event_callbacks(jiot_nidd_plat_event_e event, void *n
 
                 jiot_nidd_plat_data_ind_t *recv_data = (jiot_nidd_plat_data_ind_t *)nidd_data;
                 jiot_nidd_data_t *data = NULL;
-	            data = (jiot_nidd_data_t *)jiot_nidd_utility_calloc(sizeof(jiot_nidd_data_t), 1);
+	            data = (jiot_nidd_data_t *)jiot_nidd_utility_calloc(1, sizeof(jiot_nidd_data_t));
                 if(data)
 	            {
 	                data->p_data = jiot_nidd_utility_calloc(recv_data->data_len+1, sizeof(uint8_t));

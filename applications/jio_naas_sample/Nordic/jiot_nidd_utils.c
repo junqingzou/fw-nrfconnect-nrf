@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(utils, CONFIG_NAAS_LOG_LEVEL);
 #define IMSI_SIZE 15
 
 static struct k_sem nidd_sem;
-static struct k_fifo nidd_fifo;
+static jiot_nidd_osal_message_t *nidd_msg;
 static struct k_work nidd_work;
 
 /*-----------------------------------------------------------------------------------------------*/
@@ -34,7 +34,7 @@ static struct k_work nidd_work;
 */
 void jiot_nidd_dumphex(uint8_t *buffer, uint32_t buffer_len)
 {
-	LOG_HEXDUMP_INF(buffer, buffer_len, "dumphex");
+	LOG_HEXDUMP_DBG(buffer, buffer_len, "dumphex");
 }
 
 /*-----------------------------------------------------------------------------------------------*/
@@ -55,6 +55,8 @@ jiot_nidd_json_err_e jiot_nidd_json_parse_get_value(const char * json_buffer,con
 	int ret;
 	cJSON *json_objs;
 	cJSON *json_data_obj;
+
+	LOG_DBG("entry");
 
 	if ((json_buffer == NULL) || (keyname == NULL) || (info == NULL)) {
 		LOG_ERR("JSON invalid param");
@@ -246,20 +248,15 @@ static void jiot_nidd_wk(struct k_work *work)
 {
 	ARG_UNUSED(work);
 
-	/* process a message */
-	jiot_nidd_osal_message_t *msg = (jiot_nidd_osal_message_t *)k_fifo_get(&nidd_fifo, K_NO_WAIT);
-	if (msg != NULL) {
-		if (msg->msgHandler != NULL) {
+	if (nidd_msg != NULL) {
+		if (nidd_msg->msgHandler != NULL) {
 			LOG_DBG("Process a message");
-			msg->msgHandler(msg->message);
+			nidd_msg->msgHandler(nidd_msg->message);
 		} else {
 			LOG_WRN("Drop a message with no handler");
 		}
-		jiot_nidd_utility_free((void *)msg);
-	}
-	/* process next message if exists */
-	if (!k_fifo_is_empty(&nidd_fifo)) {
-		k_work_submit(&nidd_work);
+		jiot_nidd_utility_free((void *)nidd_msg);
+		nidd_msg = NULL;
 	}
 }
 
@@ -276,12 +273,11 @@ jiot_nidd_osal_message_processor_t* jiot_nidd_osal_message_processor_create(jiot
 	ARG_UNUSED(entry_fn);
 	LOG_DBG("entry");
 
-	/* Use FIFO to hold received messages */
-	k_fifo_init(&nidd_fifo);
 	/* Use system work queue to scheduling message handling */
 	k_work_init(&nidd_work, jiot_nidd_wk);
+	nidd_msg = NULL;
 
-	return &nidd_fifo;
+	return &nidd_work;  /* dummy, not used */
 }
 
 /*-----------------------------------------------------------------------------------------------*/
@@ -300,10 +296,12 @@ jiot_nidd_osal_err_e jiot_nidd_osal_message_processor_send(jiot_nidd_osal_messag
 	ARG_UNUSED(msgProcessor);
 	LOG_DBG("entry");
 
-	k_fifo_put(&nidd_fifo, msg);
 	/* Submit to system work queue if not busy */
 	if (!k_work_is_pending(&nidd_work)) {
+		nidd_msg = msg;
 		k_work_submit(&nidd_work);
+	} else {
+		LOG_DBG("Busy, message dropped");  /* CORRECT-ME */
 	}
 
 	return E_NIDD_OSAL_SUCCESS;
@@ -324,7 +322,7 @@ int jiot_nidd_osal_message_processor_isdone(jiot_nidd_osal_message_processor_t* 
 	LOG_DBG("entry");
 
 	/* dummpy implement */
-	return k_fifo_is_empty(&nidd_fifo);
+	return 0;
 }
 
 /*-----------------------------------------------------------------------------------------------*/

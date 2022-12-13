@@ -142,8 +142,15 @@ static void nidd_thread_func(void *p1, void *p2, void *p3)
 		if (ret == 0) {
 			continue;
 		}
-		//LOG_HEXDUMP_DBG(rx_data, ret, "nidd-receive");
-		EVT(E_NIDD_PLAT_EVENT_DATA_IND, rx_data, ret);
+
+		/* Event data */
+		jiot_nidd_plat_data_ind_t data_ind = {
+			.nidd_id = nidd_sock,
+			.data_len = ret,
+			.p_data = rx_data
+		};
+
+		EVT(E_NIDD_PLAT_EVENT_DATA_IND, &data_ind, sizeof(jiot_nidd_plat_data_ind_t));
 	} while (true);
 
 	(void)close(nidd_sock);
@@ -172,11 +179,7 @@ jiot_plat_nidd_ret_e jiot_nidd_plat_connect(uint32_t* nidd_id, char* apn, jiot_n
 	}
 
 	/* As of now, primary PDP context only */
-#if defined(CONFIG_NAAS_NORDIC_SIMULATION)
-	sprintf(cmd, "AT+CGDCONT=0,\"Non-IP\"");
-#else
 	sprintf(cmd, "AT+CGDCONT=0,\"Non-IP\",\"%s\"", apn);
-#endif
 	ret = nrf_modem_at_printf(cmd);
 	if (ret) {
 		LOG_ERR("Failed to configure PDN: %d", ret);
@@ -250,6 +253,7 @@ bool jiot_nidd_plat_is_nidd_activated(uint32_t nidd_id)
 	return (cereg_status == HOME || cereg_status == ROAMING);
 }
 
+
 /*************************************************************************************************************
 * @brief           Send NIDD data to modem.
 * @param[in]       nidd_id -- the 
@@ -262,7 +266,6 @@ jiot_plat_nidd_ret_e jiot_nidd_plat_send_data(uint32_t nidd_id, void* data, uint
 	int ret;
 
 	LOG_DBG("id: %d, len: %d", nidd_id, length);
-	//LOG_HEXDUMP_DBG(data, length, "nidd-send");
 
 	ret = send(nidd_sock, data, length, 0);
 	if (ret < 0) {
